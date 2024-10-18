@@ -2,9 +2,10 @@ services:
   mysql:
     image: 'mysql:latest'
     environment:
-      - 'MYSQL_DATABASE=mydatabase'
-      - 'MYSQL_PASSWORD=secret'
-      - 'MYSQL_ROOT_PASSWORD=verysecret'
-      - 'MYSQL_USER=myuser'
+      - 'MYSQL_DATABASE=chatgpt-db2'
+      - 'MYSQL_PASSWORD=password123'
+      - 'MYSQL_ROOT_PASSWORD=password123'
+      - 'MYSQL_USER=user'
     ports:
-      - '3306'
+      - '9004:3306'
+
