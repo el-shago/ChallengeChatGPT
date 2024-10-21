@@ -17,12 +17,21 @@ public class OpenAiController {
     }
 
     @PostMapping("/prompt-vehicle")
-    public ResponseEntity<ChatInteraction> sendPromptWithVehicleInfo(
+    public ResponseEntity<?> sendPromptWithVehicleInfo(
             @RequestParam String prompt,
             @RequestParam String make,
             @RequestParam String model,
-            @RequestParam String year) throws Exception {
-        ChatInteraction interaction = openAiService.sendPromptWithVehicleInfo(prompt, make, model, year);
-        return ResponseEntity.status(HttpStatus.OK).body(interaction);
+            @RequestParam String year) {
+        try {
+            if (prompt == null || prompt.trim().isEmpty()) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("El prompt no puede estar vacío.");
+            }
+
+            ChatInteraction interaction = openAiService.sendPromptWithVehicleInfo(prompt, make, model, year);
+            return ResponseEntity.status(HttpStatus.OK).body(interaction);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error inesperado: " + e.getMessage());
+        }
     }
 }

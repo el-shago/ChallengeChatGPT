@@ -1,8 +1,8 @@
 package mx.edu.cetys.santiagopm.controller;
 
-import mx.edu.cetys.santiagopm.service.controller.OpenAiController;
-import mx.edu.cetys.santiagopm.service.model.ChatInteraction;
 import mx.edu.cetys.santiagopm.service.OpenAiService;
+import mx.edu.cetys.santiagopm.service.model.ChatInteraction;
+import mx.edu.cetys.santiagopm.service.controller.OpenAiController;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -35,43 +35,54 @@ class OpenAiControllerTest {
     }
 
     @Test
-    void testSendPrompt_ReturnsChatInteraction() throws Exception {
+    void testSendPromptWithVehicleInfo_ReturnsChatInteraction() throws Exception {
         ChatInteraction mockInteraction = new ChatInteraction();
-        mockInteraction.setPrompt("Hola, ¿cómo estás?");
-        mockInteraction.setResponse("Estoy bien, ¿y tú?");
+        mockInteraction.setPrompt("Dime más sobre este auto");
+        mockInteraction.setResponse("Este es un Buick Enclave 2008, tipo SUV.");
 
-        when(openAiService.sendPrompt(anyString())).thenReturn(mockInteraction);
+        when(openAiService.sendPromptWithVehicleInfo(anyString(), anyString(), anyString(), anyString()))
+                .thenReturn(mockInteraction);
 
-        mockMvc.perform(post("/api/chat/prompt")
-                        .param("prompt", "Hola, ¿cómo estás?")
+        mockMvc.perform(post("/api/chat/prompt-vehicle")
+                        .param("prompt", "Dime más sobre este auto")
+                        .param("make", "Buick")
+                        .param("model", "Enclave")
+                        .param("year", "2008")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.prompt").value("Hola, ¿cómo estás?"))
-                .andExpect(jsonPath("$.response").value("Estoy bien, ¿y tú?"));
+                .andExpect(jsonPath("$.prompt").value("Dime más sobre este auto"))
+                .andExpect(jsonPath("$.response").value("Este es un Buick Enclave 2008, tipo SUV."));
     }
 
     @Test
-    void testSendPrompt_ThrowsException() throws Exception {
-        when(openAiService.sendPrompt(anyString())).thenThrow(new RuntimeException("Error en el servicio"));
+    void testSendPromptWithVehicleInfo_ThrowsException() throws Exception {
+        when(openAiService.sendPromptWithVehicleInfo(anyString(), anyString(), anyString(), anyString()))
+                .thenThrow(new RuntimeException("Error en el servicio"));
 
-        mockMvc.perform(post("/api/chat/prompt")
-                        .param("prompt", "Hola, ¿cómo estás?")
+        mockMvc.perform(post("/api/chat/prompt-vehicle")
+                        .param("prompt", "Dime más sobre este auto")
+                        .param("make", "Buick")
+                        .param("model", "Enclave")
+                        .param("year", "2008")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError());
     }
 
     @Test
-    void testSendPrompt_EmptyPrompt() throws Exception {
-        mockMvc.perform(post("/api/chat/prompt")
+    void testSendPromptWithVehicleInfo_EmptyPrompt() throws Exception {
+        mockMvc.perform(post("/api/chat/prompt-vehicle")
                         .param("prompt", "")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
-    void testSendPrompt_NullPrompt() throws Exception {
-        mockMvc.perform(post("/api/chat/prompt")
+    void testSendPromptWithVehicleInfo_NullPrompt() throws Exception {
+        mockMvc.perform(post("/api/chat/prompt-vehicle")
                         .param("prompt", (String) null)
+                        .param("make", "Buick")
+                        .param("model", "Enclave")
+                        .param("year", "2008")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
     }
