@@ -23,27 +23,26 @@ public class OpenAiService {
     private String apiKey;
 
     private final OpenAiRepository repository;
+    private final CarDataService carDataService;
 
-    public OpenAiService(OpenAiRepository repository) {
+    public OpenAiService(OpenAiRepository repository, CarDataService carDataService) {
         this.repository = repository;
+        this.carDataService = carDataService;
     }
 
     private static final ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
 
-    public ChatInteraction sendPrompt(String prompt) throws Exception {
+    public ChatInteraction sendPromptWithVehicleInfo(String prompt, String make, String model, String year) throws Exception {
         ChatInteraction interaction = new ChatInteraction();
         interaction.setPrompt(prompt);
 
-        executorService.submit(() -> {
-            try {
-                String response = getChatGPTResponse(prompt);
-                interaction.setResponse(response);
-                repository.save(interaction);
-            } catch (Exception e) {
-                e.printStackTrace();
+        String carData = carDataService.getCarDetails(make, model, year);
 
-            }
-        }).get();
+        String combinedPrompt = prompt + "\nInformacion del auto:\n" + carData;
+        String response = getChatGPTResponse(combinedPrompt);
+
+        interaction.setResponse(response);
+        repository.save(interaction);
 
         return interaction;
     }
@@ -52,33 +51,33 @@ public class OpenAiService {
         RestTemplate restTemplate = new RestTemplate();
 
         String apiUrl = "https://api.openai.com/v1/chat/completions";
-
         HttpHeaders headers = new HttpHeaders();
         headers.set("Authorization", "Bearer " + apiKey);
         headers.set("Content-Type", "application/json");
 
-        String body = """
-    {
-        "model": "gpt-3.5-turbo",
-        "messages": [{"role": "user", "content": "%s"}],
-        "max_tokens": 1000
-    }
-    """.formatted(prompt);
+        JSONObject jsonBody = new JSONObject();
+        jsonBody.put("model", "gpt-3.5-turbo");
+        jsonBody.put("messages", new JSONArray().put(new JSONObject().put("role", "user").put("content", prompt)));
+        jsonBody.put("max_tokens", 1000);
 
-        HttpEntity<String> request = new HttpEntity<>(body, headers);
+        System.out.println("Request Body: " + jsonBody.toString());
+
+        HttpEntity<String> request = new HttpEntity<>(jsonBody.toString(), headers);
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, request, String.class);
-            JSONObject jsonResponse = new JSONObject(response.getBody());
-            JSONArray choices = jsonResponse.getJSONArray("choices");
-            String chatGPTResponse = choices.getJSONObject(0).getJSONObject("message").getString("content");
 
-            System.out.println("ChatGPT API processed response: " + chatGPTResponse);
-
-            return chatGPTResponse;
+            if (response.getStatusCode().is2xxSuccessful()) {
+                JSONObject jsonResponse = new JSONObject(response.getBody());
+                return jsonResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+            } else {
+                System.err.println("OpenAI API responded with status code: " + response.getStatusCodeValue());
+                return "Error: La API de OpenAI devolvió un código de error " + response.getStatusCodeValue();
+            }
         } catch (Exception e) {
             e.printStackTrace();
-            return "Error al obtener respuesta de ChatGPT";
+            return "Error al obtener respuesta de ChatGPT: " + e.getMessage();
         }
     }
 }
+

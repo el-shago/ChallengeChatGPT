@@ -16,17 +16,13 @@ public class OpenAiController {
         this.openAiService = openAiService;
     }
 
-    @PostMapping("/prompt")
-    public ResponseEntity<ChatInteraction> sendPrompt(@RequestParam("prompt") String prompt) {
-        if (prompt == null || prompt.trim().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Prompt cannot be empty or null");
-        }
-
-        try {
-            ChatInteraction interaction = openAiService.sendPrompt(prompt);
-            return ResponseEntity.ok(interaction);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error processing request", e);
-        }
+    @PostMapping("/prompt-vehicle")
+    public ResponseEntity<ChatInteraction> sendPromptWithVehicleInfo(
+            @RequestParam String prompt,
+            @RequestParam String make,
+            @RequestParam String model,
+            @RequestParam String year) throws Exception {
+        ChatInteraction interaction = openAiService.sendPromptWithVehicleInfo(prompt, make, model, year);
+        return ResponseEntity.status(HttpStatus.OK).body(interaction);
     }
 }
