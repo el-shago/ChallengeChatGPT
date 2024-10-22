@@ -47,7 +47,7 @@ public class OpenAiService {
         return interaction;
     }
 
-    private String getChatGPTResponse(String prompt) {
+    String getChatGPTResponse(String prompt) {
         RestTemplate restTemplate = new RestTemplate();
 
         String apiUrl = "https://api.openai.com/v1/chat/completions";
